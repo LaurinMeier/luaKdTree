@@ -1,0 +1,73 @@
+function vec(x,y,z)return{x=x or 0,y=y or 0,z=z or 0}end
+
+function insertKD(point, root, layer)
+    if not root.p then
+        root.p = point
+        root.r = {}
+        root.l = {}
+        root.visited = false
+    else
+        if (layer % 2 == 0 and point.x > root.p.x) or (layer % 2 == 1 and point.y > root.p.y) then
+            insertKD(point, root.r, layer + 1)
+        else
+            insertKD(point, root.l, layer + 1)
+        end
+    end
+end
+
+function closest(point, nodeA, nodeB)
+    if not nodeA.p then
+        return nodeB
+    elseif not nodeB.p then
+        return nodeA
+    end
+    
+    if math.sqrt((point.x - nodeA.p.x)^2 + (point.y - nodeA.p.y)^2) < math.sqrt((point.x - nodeB.p.x)^2 + (point.y - nodeB.p.y)^2) then
+        return nodeA
+    else
+        return nodeB
+    end
+end
+
+function nearestNeighbour(root, tgt, layer)
+    if not root.p then
+        return {}
+    end
+
+    local next, other
+    if (layer % 2 == 0 and tgt.x > root.p.x) or (layer % 2 == 1 and tgt.y > root.p.y) then
+        next = root.r
+        other = root.l
+    else
+        next = root.l
+        other = root.r
+    end
+
+    local temp = nearestNeighbour(next, tgt, layer + 1)
+    local best = closest(tgt, temp, root)
+
+    local r = (tgt.x - best.p.x)^2 + (tgt.y - best.p.y)^2
+    local rPrime = layer % 2 == 0 and tgt.x - root.p.x or tgt.y - root.p.y
+
+    if r >= rPrime^2 then
+        temp = nearestNeighbour(other, tgt, layer + 1)
+        best = closest(tgt, temp, best)
+    end
+
+    return best
+end
+
+
+
+
+--example usecase:
+
+kdRoot = {} --create kd table
+
+insertKD(vec(48,48), kdRoot, 0) --insert root node in the middle of the 96x96 canvas
+for i=1, 10 do
+    insertKD(vec(math.random(5,90), math.random(5,90)), kdRoot, 0) --insert 10 random points
+end
+
+target = vec(70, 50)
+nearestNode = nearestNeighbour(kdRoot, target, 0) --nearest known point to "target" in the KD-tree
